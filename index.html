@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solo Leveling - Telegram Mini App</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --sys-bg: #030712;
+            --sys-panel: rgba(10, 15, 30, 0.95);
+            --sys-border: #38bdf8;
+            --sys-glow: rgba(56, 189, 248, 0.4);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #38bdf8;
+            --gold: #f59e0b;
+        }
+
+        body {
+            background-color: var(--sys-bg);
+            color: var(--text-main);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 440px;
+            background: var(--sys-panel);
+            border: 2px solid var(--sys-border);
+            border-radius: 16px;
+            box-shadow: 0 0 25px var(--sys-glow);
+            overflow: hidden;
+            box-sizing: border-box;
+        }
+
+        .screen {
+            display: none;
+            padding: 15px;
+            text-align: center;
+        }
+        .screen.active {
+            display: block;
+        }
+
+        .system-nav {
+            display: flex;
+            background: #020617;
+            border-bottom: 2px solid var(--sys-border);
+            overflow-x: auto;
+        }
+        .nav-btn {
+            flex: 1;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            padding: 10px 4px;
+            font-size: 11px;
+            cursor: pointer;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+        .nav-btn.active {
+            color: var(--accent);
+            border-bottom: 3px solid var(--accent);
+            background: rgba(56, 189, 248, 0.08);
+        }
+
+        .content-section {
+            display: none;
+            padding: 12px;
+            max-height: 450px;
+            overflow-y: auto;
+            text-align: right;
+        }
+        .content-section.active {
+            display: block;
+        }
+
+        h2 {
+            color: var(--accent);
+            font-size: 15px;
+            margin-top: 0;
+            text-shadow: 0 0 10px var(--sys-glow);
+            text-align: center;
+        }
+
+        button.sys-btn {
+            background: linear-gradient(135deg, #0369a1, #38bdf8);
+            color: #0f172a;
+            border: none;
+            padding: 8px 12px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 8px;
+            box-shadow: 0 0 10px var(--sys-glow);
+        }
+
+        .system-box {
+            background: rgba(2, 6, 23, 0.85);
+            border: 1px dashed var(--sys-border);
+            border-radius: 10px;
+            padding: 10px;
+            font-size: 12px;
+            margin-bottom: 10px;
+        }
+        .system-box p {
+            margin: 5px 0;
+        }
+
+        .avatar-grid {
+            display: flex;
+            justify-content: space-around;
+            margin: 10px 0;
+        }
+        .avatar-option {
+            border: 2px solid #334155;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            cursor: pointer;
+            background: #020617;
+        }
+        .avatar-option.selected {
+            border-color: var(--accent);
+            box-shadow: 0 0 12px var(--sys-glow);
+            transform: scale(1.08);
+        }
+
+        .item-card {
+            background: #020617;
+            border: 1px solid #1e293b;
+            padding: 8px;
+            border-radius: 8px;
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .item-info {
+            font-size: 11px;
+        }
+        .item-info b {
+            color: var(--gold);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        
+        <!-- شاشة تهيئة الهوية عبر تيليجرام -->
+        <div id="screen-auth" class="screen active">
+            <h2>⚡ [ TELEGRAM SYSTEM SYNC ]</h2>
+            <p style="color:var(--text-muted); font-size:11px;">اختر مظهر الأفاتار ومزامنة بيانات الصياد</p>
+            
+            <div class="avatar-grid">
+                <div class="avatar-option selected" onclick="selectAvatar('👤', this)">👤</div>
+                <div class="avatar-option" onclick="selectAvatar('🥷', this)">🥷</div>
+                <div class="avatar-option" onclick="selectAvatar('👑', this)">👑</div>
+                <div class="avatar-option" onclick="selectAvatar('💀', this)">💀</div>
+            </div>
+
+            <button class="sys-btn" onclick="syncTelegramUser()">ربط حساب تيليجرام وبدء النظام 🛡️</button>
+        </div>
+
+        <!-- الواجهة الرئيسية للميني أب -->
+        <div id="screen-main" class="screen" style="padding: 0;">
+            <div class="system-nav">
+                <button class="nav-btn active" onclick="switchTab('status')">👤 الحالة</button>
+                <button class="nav-btn" onclick="switchTab('shop')">🛒 المتجر</button>
+                <button class="nav-btn" onclick="switchTab('inventory')">🎒 الحقيبة</button>
+            </div>
+
+            <!-- لوحة الحالة -->
+            <div id="tab-status" class="content-section active">
+                <h2>[ لوحة خصائص الصياد ]</h2>
+                <div class="system-box" style="text-align: center;">
+                    <span id="display-avatar" style="font-size: 35px;">👤</span>
+                </div>
+                <div class="system-box">
+                    <p>👤 الصياد: <span id="s-name" style="color:var(--accent)">Hunter</span></p>
+                    <p>⭐ المستوى: <span id="s-level">1</span> (<span id="s-rank">E-Rank</span>)</p>
+                    <p>❤️ الصحة (HP): <span id="s-hp">100</span> / <span id="s-maxhp">100</span></p>
+                    <p>💪 القوة (STR): <span id="s-str">12</span> | 🧠 الذكاء: <span id="s-int">10</span></p>
+                    <p>💰 الذهب: <span id="s-gold">300</span> Gold</p>
+                </div>
+            </div>
+
+            <!-- المتجر -->
+            <div id="tab-shop" class="content-section">
+                <h2>[ متجر النظام ]</h2>
+                <div class="item-card">
+                    <div class="item-info">🧪 <b>جرعة شفاء صغرى</b><br>تستعيد +40 HP.<br>السعر: <b>80 Gold</b></div>
+                    <button class="sys-btn" style="width: auto; padding: 4px 10px; margin:0;" onclick="buyItem('جرعة شفاء صغرى', 'potion', 40, 80)">شراء</button>
+                </div>
+                <div class="item-card">
+                    <div class="item-info">⚔️ <b>خناجر كاسر الفولاذ</b><br>تزيد القوة +10 STR.<br>السعر: <b>300 Gold</b></div>
+                    <button class="sys-btn" style="width: auto; padding: 4px 10px; margin:0;" onclick="buyItem('خناجر كاسر الفولاذ', 'weapon', 10, 300)">شراء</button>
+                </div>
+            </div>
+
+            <!-- الحقيبة -->
+            <div id="tab-inventory" class="content-section">
+                <h2>[ حقيبة العتاد ]</h2>
+                <div id="inventory-list" style="font-size: 11px; color: var(--text-muted); text-align: center; padding: 15px;">
+                    الحقيبة فارغة. اذهب للمتجر لاقتناء الموارد!
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        let tg = window.Telegram.WebApp;
+        tg.expand(); // تكبير الميني أب لملء الشاشة في تيليجرام
+
+        let selectedAvatarSymbol = "👤";
+        let player = {
+            username: "Hunter",
+            avatar: "👤",
+            level: 1,
+            rank: "E-Rank",
+            hp: 100,
+            max_hp: 100,
+            str: 12,
+            int: 10,
+            gold: 300,
+            inventory: []
+        };
+
+        function selectAvatar(symbol, element) {
+            document.querySelectorAll('.avatar-option').forEach(el => el.classList.remove('selected'));
+            element.classList.add('selected');
+            selectedAvatarSymbol = symbol;
+        }
+
+        function syncTelegramUser() {
+            // جلب اسم المستخدم الحقيقي من التيليجرام لو متوفر
+            if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                player.username = tg.initDataUnsafe.user.first_name || "Telegram Hunter";
+            }
+            player.avatar = selectedAvatarSymbol;
+
+            document.getElementById("s-name").innerText = player.username;
+            document.getElementById("display-avatar").innerText = player.avatar;
+            updateUI();
+
+            document.getElementById("screen-auth").classList.remove("active");
+            document.getElementById("screen-main").classList.add("active");
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.content-section').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById('tab-' + tabId).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+
+        function updateUI() {
+            document.getElementById("s-level").innerText = player.level;
+            document.getElementById("s-rank").innerText = player.rank;
+            document.getElementById("s-hp").innerText = player.hp;
+            document.getElementById("s-maxhp").innerText = player.max_hp;
+            document.getElementById("s-str").innerText = player.str;
+            document.getElementById("s-int").innerText = player.int;
+            document.getElementById("s-gold").innerText = player.gold;
+        }
+
+        function buyItem(name, type, value, cost) {
+            if (player.gold < cost) {
+                alert("❌ رصيد الذهب غير كافي!");
+                return;
+            }
+            player.gold -= cost;
+            player.inventory.push({ name, type, value });
+            updateUI();
+            renderInventory();
+            alert("✅ تم الاستحواذ على (" + name + ") وإضافته للحقيبة!");
+        }
+
+        function renderInventory() {
+            let invDiv = document.getElementById("inventory-list");
+            if (player.inventory.length === 0) {
+                invDiv.innerHTML = "الحقيبة فارغة حالياً.";
+                return;
+            }
+            invDiv.innerHTML = "";
+            player.inventory.path = player.inventory.forEach((item, index) => {
+                invDiv.innerHTML += `
+                    <div class="item-card">
+                        <div class="item-info">📦 <b>${item.name}</b></div>
+                        <button class="sys-btn" style="width:auto; padding:3px 8px; margin:0;" onclick="useItem(${index})">تجهيز</button>
+                    </div>`;
+            });
+        }
+
+        function useItem(index) {
+            let item = player.inventory[index];
+            if (item.type === 'potion') {
+                player.hp = Math.min(player.max_hp, player.hp + item.value);
+            } else if (item.type === 'weapon') {
+                player.str += item.value;
+            }
+            player.inventory.splice(index, 1);
+            updateUI();
+            renderInventory();
+            alert("✨ تم استخدام " + item.name + " وتحديث الخصائص بنجاح!");
+        }
+    </script>
+</body>
+</html>
